@@ -41,7 +41,7 @@ def build_pipeline_for_columns(X, text_col='mentor_feedback_text'):
     categorical_features = [c for c in categorical_candidates if c in X.columns]
     categorical_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse=False))
+        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
     ])
 
     text_features = [text_col] if text_col in X.columns else []

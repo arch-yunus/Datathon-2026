@@ -32,7 +32,7 @@ def build_pipeline(text_col='mentor_feedback_text'):
     categorical_features = ['department','university_tier','target_role','hobby','preferred_social_media_platform']
     categorical_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse=False))
+        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
     ])
 
     text_transformer = Pipeline(steps=[
