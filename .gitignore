@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+.venv/*
+venv/
+ENV/
+env.bak/
+.installed.cfg
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Data
+*.csv
+*.parquet
+*.db
+
+# Models
+*.pkl
+*.joblib
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Logs
+logs/
