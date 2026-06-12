@@ -57,9 +57,17 @@ def build_pipeline_for_columns(X, text_col='mentor_feedback_text'):
 
     preprocessor = ColumnTransformer(transformers=transformers, remainder='drop')
 
+    params = {'n_estimators': 1000, 'learning_rate': 0.05, 'max_depth': 6, 'random_state': 42, 'n_jobs': -1}
+    import os, json
+    if os.path.exists('best_params.json'):
+        with open('best_params.json', 'r') as f:
+            bp = json.load(f)
+            if 'xgboost' in bp:
+                params.update(bp['xgboost'])
+
     model = Pipeline(steps=[
         ('preproc', preprocessor),
-        ('xgb', XGBRegressor(n_estimators=1000, learning_rate=0.05, max_depth=6, random_state=42, n_jobs=-1))
+        ('xgb', XGBRegressor(**params))
     ])
     return model
 

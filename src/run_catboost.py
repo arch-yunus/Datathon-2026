@@ -49,15 +49,25 @@ def run_catboost_cv(train_path, test_path, out_submission, model_out, cv=5):
         X_tr, X_val = X_train.iloc[tr_idx], X_train.iloc[val_idx]
         y_tr, y_val = y[tr_idx], y[val_idx]
         
-        model = CatBoostRegressor(
-            iterations=1000,
-            learning_rate=0.05,
-            depth=8,
-            l2_leaf_reg=3,
-            cat_features=cat_cols if cat_cols else None,
-            random_state=42,
-            verbose=0
-        )
+        params = {
+            'iterations': 1000,
+            'learning_rate': 0.05,
+            'depth': 8,
+            'l2_leaf_reg': 3,
+            'cat_features': cat_cols if cat_cols else None,
+            'random_state': 42,
+            'verbose': 0
+        }
+        import os, json
+        if os.path.exists('best_params.json'):
+            with open('best_params.json', 'r') as f:
+                bp = json.load(f)
+                if 'catboost' in bp:
+                    # Update all params except cat_features, random_state, verbose
+                    for k, v in bp['catboost'].items():
+                        params[k] = v
+                        
+        model = CatBoostRegressor(**params)
         model.fit(X_tr, y_tr)
         val_pred = model.predict(X_val)
         oof_preds[val_idx] = val_pred

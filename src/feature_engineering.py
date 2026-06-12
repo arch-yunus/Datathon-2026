@@ -66,6 +66,38 @@ def engineer(df):
     return df
 
 
+def add_nlp_embeddings(df_train, df_test, text_col='mentor_feedback_text', n_components=32):
+    try:
+        from sentence_transformers import SentenceTransformer
+        from sklearn.decomposition import PCA
+    except ImportError:
+        print("sentence_transformers or sklearn not installed. Skipping NLP embeddings.")
+        return df_train, df_test
+
+    if text_col not in df_train.columns:
+        return df_train, df_test
+
+    print("Loading SentenceTransformer model...")
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    
+    train_texts = df_train[text_col].fillna("").tolist()
+    test_texts = df_test[text_col].fillna("").tolist()
+    
+    print("Encoding texts...")
+    train_emb = model.encode(train_texts, show_progress_bar=False)
+    test_emb = model.encode(test_texts, show_progress_bar=False)
+    
+    print(f"Applying PCA down to {n_components} dimensions...")
+    pca = PCA(n_components=n_components, random_state=42)
+    train_pca = pca.fit_transform(train_emb)
+    test_pca = pca.transform(test_emb)
+    
+    for i in range(n_components):
+        df_train[f'emb_pca_{i}'] = train_pca[:, i]
+        df_test[f'emb_pca_{i}'] = test_pca[:, i]
+        
+    return df_train, df_test
+
 def main():
     import argparse
     parser = argparse.ArgumentParser()
@@ -81,10 +113,19 @@ def main():
     train_fe = engineer(train)
     test_fe = engineer(test)
 
+    # Use texts from original dataset but append to feature engineered dataset
+    train_fe['mentor_feedback_text'] = train['mentor_feedback_text'] if 'mentor_feedback_text' in train.columns else ""
+    test_fe['mentor_feedback_text'] = test['mentor_feedback_text'] if 'mentor_feedback_text' in test.columns else ""
+    
+    train_fe, test_fe = add_nlp_embeddings(train_fe, test_fe, text_col='mentor_feedback_text', n_components=32)
+
+    # Drop the raw text column from fe dataset to save space
+    train_fe = train_fe.drop(columns=['mentor_feedback_text'], errors='ignore')
+    test_fe = test_fe.drop(columns=['mentor_feedback_text'], errors='ignore')
+
     train_fe.to_csv(args.out_train, index=False)
     test_fe.to_csv(args.out_test, index=False)
     print('Saved', args.out_train, 'and', args.out_test)
-
 
 if __name__ == '__main__':
     main()
