@@ -4,6 +4,12 @@ import numpy as np
 
 def engineer(df):
     df = df.copy()
+
+    # Add missing value indicators
+    for col in df.columns:
+        if df[col].isnull().any():
+            df[col + '_isnull'] = df[col].isnull().astype(int)
+
     # Years since graduation relative to application_year if present, else use 2026
     if 'graduation_year' in df.columns and 'application_year' in df.columns:
         df['years_since_grad'] = df['application_year'] - df['graduation_year']
@@ -33,11 +39,25 @@ def engineer(df):
     if 'github_avg_stars' in df.columns:
         df['github_star_log'] = np.log1p(df['github_avg_stars'].fillna(0))
 
-    # Interaction features
+    # Advanced Interaction features
     if 'coding_score' in df.columns and 'project_quality_score' in df.columns:
         df['coding_x_project'] = df['coding_score'].fillna(0) * df['project_quality_score'].fillna(0)
     if 'technical_interview_score' in df.columns and 'communication_score' in df.columns:
         df['tech_x_comm'] = df['technical_interview_score'].fillna(0) * df['communication_score'].fillna(0)
+    
+    # New: total interview score
+    interview_cols = ['technical_interview_score', 'hr_interview_score']
+    if all(c in df.columns for c in interview_cols):
+        df['total_interview_score'] = df[interview_cols].sum(axis=1)
+
+    # New: Group Aggregations
+    if 'department' in df.columns and 'cgpa' in df.columns:
+        dept_cgpa = df.groupby('department')['cgpa'].transform('mean')
+        df['cgpa_dept_ratio'] = df['cgpa'] / (dept_cgpa + 1e-5)
+
+    if 'university_tier' in df.columns and 'coding_score' in df.columns:
+        tier_coding = df.groupby('university_tier')['coding_score'].transform('mean')
+        df['coding_tier_ratio'] = df['coding_score'] / (tier_coding + 1e-5)
 
     # Fill NA for numeric columns with 0 for safety
     num_cols = df.select_dtypes(include=[np.number]).columns

@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from catboost import CatBoostRegressor
 import joblib
 import os
+import mlflow
 
 
 def prepare_data(train, test, target_col='career_success_score'):
@@ -33,6 +34,8 @@ def prepare_data(train, test, target_col='career_success_score'):
 
 
 def run_catboost_cv(train_path, test_path, out_submission, model_out, cv=5):
+    mlflow.set_experiment("Datathon2026_CatBoost")
+    mlflow.start_run()
     train = pd.read_csv(train_path)
     test = pd.read_csv(test_path)
     
@@ -66,6 +69,10 @@ def run_catboost_cv(train_path, test_path, out_submission, model_out, cv=5):
     std_cv = np.std(scores)
     overall_mse = mean_squared_error(y, oof_preds)
     print(f'CatBoost CV mean MSE: {mean_cv:.4f} ± {std_cv:.4f}  | OOF MSE: {overall_mse:.4f}')
+    mlflow.log_param("cv_folds", cv)
+    mlflow.log_param("model", "CatBoost")
+    mlflow.log_metric("cv_mean_mse", mean_cv)
+    mlflow.log_metric("oof_mse", overall_mse)
     
     # final model
     final_model = CatBoostRegressor(
@@ -95,6 +102,7 @@ def run_catboost_cv(train_path, test_path, out_submission, model_out, cv=5):
     oof_df['oof_pred'] = oof_preds
     oof_df.to_csv('oof_catboost.csv', index=False)
     print('Saved OOF predictions to oof_catboost.csv')
+    mlflow.end_run()
 
 
 if __name__ == '__main__':
