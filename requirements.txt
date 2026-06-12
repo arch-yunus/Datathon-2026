@@ -8,3 +8,8 @@ scipy
 scikit-optimize
 transformers
 sentence-transformers
+catboost
+xgboost
+torch
+mlflow
+optuna

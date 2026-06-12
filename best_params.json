@@ -1,0 +1,25 @@
+{
+    "lightgbm": {
+        "n_estimators": 387,
+        "learning_rate": 0.03211445458283568,
+        "num_leaves": 94,
+        "max_depth": 7,
+        "min_child_samples": 46,
+        "subsample": 0.607506781302541,
+        "colsample_bytree": 0.5013974543258628
+    },
+    "xgboost": {
+        "n_estimators": 978,
+        "learning_rate": 0.015694115859535476,
+        "max_depth": 8,
+        "min_child_weight": 4,
+        "subsample": 0.5530101170117244,
+        "colsample_bytree": 0.9513737268636905
+    },
+    "catboost": {
+        "iterations": 960,
+        "learning_rate": 0.018916682146645082,
+        "depth": 8,
+        "l2_leaf_reg": 0.04399573665827147
+    }
+}
