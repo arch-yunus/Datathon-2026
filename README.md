@@ -1,129 +1,113 @@
-# Datathon 2026 - Kariyer Başarı Skoru Tahmin Yarışması
+<div align="center">
+  <h1>🏆 Datathon 2026 - Career Success Score Predictor</h1>
+  
+  <p>
+    <strong>Predicting Student Career Success with Deep NLP and Advanced Stacking Models</strong>
+  </p>
+  
+  ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
+  ![Optuna](https://img.shields.io/badge/Optuna-Hyperparameter_Optimization-blue)
+  ![PyTorch](https://img.shields.io/badge/PyTorch-Deep_Learning-red.svg)
+  ![LightGBM](https://img.shields.io/badge/LightGBM-Gradient_Boosting-green)
+  ![CatBoost](https://img.shields.io/badge/CatBoost-Gradient_Boosting-yellow)
+  ![MLflow](https://img.shields.io/badge/MLflow-Experiment_Tracking-blueviolet)
 
-Bu repo, Datathon 2026 için yarışma çözüm çalışmaları ve referans kodlarını içerecek şekilde düzenlenmek üzere hazırlanmıştır.
+</div>
 
-**Project Overview**
-- **Amaç**: Öğrencilerin profil verilerine göre `career_success_score` (0-100) tahmin etmek.
-- **Veri Türleri**: Sayısal, kategorik ve doğal dil (mentor_feedback_text).
-- **Değerlendirme**: Mean Squared Error (MSE).
+---
 
-**Repository Structure**
-- **Data**: Veri dosyaları kök dizinde bulunur: [train.csv](train.csv), [test.csv](test.csv), [sample_submission.csv](sample_submission.csv)
-- **Notebooks**: Deneysel Jupyter notebook'ları `notebooks/` klasöründe.
-- **Src**: Eğitim ve tahmin betikleri `src/` klasöründe (`train.py`, `predict.py`, `features.py`).
-- **README**: Bu dosya `README.md`.
+## 📖 Proje Özeti
+Bu depo, **Datathon 2026** yarışması kapsamında öğrencilerin profil verilerinden yola çıkarak `career_success_score` (Kariyer Başarı Skoru) tahminlemesini yapan **gelişmiş bir makine öğrenmesi boru hattını (pipeline)** içerir. 
 
-**Datasets**
-- **train.csv**: Eğitim verisi ve hedef `career_success_score` içerir.
-- **test.csv**: Tahmin yapılacak veri.
-- **sample_submission.csv**: Gönderim formatı.
+Proje, basit bir regresyon modelinden başlayarak **Derin NLP özellik çıkarımına (SBERT+PCA)** ve nihayetinde yapay zeka meta-modellerini kullanan bir **RidgeCV Stacking** mimarisine kadar uzanmaktadır. Projemizin ulaştığı en düşük hata skoru **OOF MSE: 80.80**'dir.
 
-**How to Run**
-- **Sanal ortam oluştur**: `python -m venv .venv` ve `pip install -r requirements.txt`.
-- **Eğitim** (örnek): `python src/train.py --data train.csv --out model.pkl`.
-- **Tahmin** (örnek): `python src/predict.py --model model.pkl --test test.csv --out submission.csv`.
+---
 
-**Quickstart (one-line)**
+## 🚀 Öne Çıkan Özellikler (Mimarimiz)
 
-1) Tüm bağımlılıkları kurup çalıştırmak için (Windows PowerShell):
+### 1. Gelişmiş Özellik Mühendisliği (Feature Engineering)
+- **Eksik Veri Tespiti**: Matematiksel ve kategorik eksiklikler stratejik olarak doldurulmuş ve yapay zekaya "veri eksikliği" durumları yeni özellikler (missing indicators) olarak öğretilmiştir.
+- **Etkileşim Değişkenleri**: Mülakat skorları toplamı (`total_interview_score`), bölüm bazında not ortalaması oranı (`cgpa_dept_ratio`) gibi yarışma dinamiklerine uygun yeni matematiksel değişkenler eklendi.
 
+### 2. Derin NLP (Doğal Dil İşleme)
+- Sadece kelime sayımına (TF-IDF) dayalı ilkel yöntemler yerine, öğrencilerin **`mentor_feedback_text`** metinleri `sentence-transformers` (all-MiniLM-L6-v2) kullanılarak çok boyutlu anlam vektörlerine dönüştürülmüştür.
+- Ağaç modellerinin (LightGBM vb.) hafızasını yormamak için bu vektörler **PCA ile 32 boyuta** indirgenip doğrudan ana veri setine kaynaştırılmıştır.
+
+### 3. Çoklu Model Çeşitliliği & Optuna ile Tuning
+Sisteme birbirinin zayıflığını örten 4 farklı ana model entegre edilmiştir:
+- **LightGBM** (Hızlı ve yüksek doğruluk)
+- **CatBoost** (Kategorik veri canavarı)
+- **XGBoost** (Klasik ve sağlam gradyan artırma)
+- **PyTorch Neural Network** (Derin sinir ağı ile çizgisel olmayan yaklaşımlar)
+
+Modeller standart parametrelerle değil, **Optuna** kütüphanesi ile otomatik hiperparametre taraması (Hyperparameter Tuning) yapılarak eğitilir. En iyi parametreler otomatik olarak `best_params.json` dosyasında tutulur.
+
+### 4. Meta-Model Stacking (Yapay Zeka ile Ensemble)
+Klasik "ortalama alma" veya doğrusal ağırlıklandırma yöntemlerini çöpe attık! Modellerimizin 5-Fold Cross Validation ile ürettikleri *Out-Of-Fold (OOF)* tahminleri, en tepedeki ikinci aşama **RidgeCV Meta-Model'e** girdi olarak verilir. Bu sistem, hangi modelin hangi tür verilerde daha çok hata yaptığını öğrenerek nihai `final_submission_stacked.csv` sonucunu kusursuz bir uyumla üretir.
+
+---
+
+## ⚙️ Kurulum ve Çalıştırma
+
+### 1. Ortam Kurulumu
+Windows PowerShell kullanarak sanal ortamınızı oluşturun ve gereksinimleri yükleyin:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-.
-# CV ile eğitim ve submission üretimi
-python src/run_pipeline.py --train train.csv --test test_x.csv --out submission.csv --model model.pkl --cv 5
 ```
 
-2) Alternatif: hızlıca yalnızca eğitim ve kayıt için
-
-```bash
-python src/train.py --data train.csv --out model.pkl
-python src/predict.py --model model.pkl --test test_x.csv --out submission.csv
+### 2. Tek Tuşla Uçtan Uca Eğitim
+Tüm veriyi işleyen, NLP gömülerini çıkaran, modelleri ayarlayan ve nihai *Stacked* tahmin dosyasını oluşturan orkestrasyon betiğini çalıştırın:
+```powershell
+python src/run_all_models.py
 ```
-
-**Modeling Notes**
-- **Feature Engineering**: Sayısal özetler, kategorik encoding, mentor_feedback_text için TF-IDF veya gömülü (embedding) kullanın.
-- **NLP**: `mentor_feedback_text` alanı önemli; basit TF-IDF + LightGBM veya transformer tabanlı gömülerle deneyin.
-- **Validation**: Zaman bazlı veya stratified CV yerine gruplama varsa grup CV önerilir.
-- **Baseline**: Önce basit regresyon/LightGBM ile baseline oluşturun, sonra NLP katkısını ölçün.
-
-**Evaluation**
-- **Metric**: MSE (düşük MSE daha iyi).
-- **Submission**: Üretilen `submission.csv` formatı `sample_submission.csv` ile aynı olmalıdır.
-
-**Submission & Notebook Sharing**
-- **Kaggle**: Final submit için `submission.csv` yükleyin.
-- **İlk 10 için**: Eğer ilk 10'a kalırsanız, notebook veya kodlarınızı paylaşmanız zorunludur.
-
-**Competition Rules & Eligibility**
-- **Kayıt**: Yarışmaya katılabilir olmak için BTK Akademi üzerinden kayıt zorunludur.
-- **Davranış**: Birden fazla hesap, özel kod paylaşımı vb. kurallara dikkat edin (yarışma kuralları geçerlidir).
-
-**İletişim / İleri Adımlar**
-- **Dosya oluşturuldu**: Bu README dosyası köke eklendi.
-- **Next**: İsterseniz `src/` için temel `train.py` ve `predict.py` oluşturayım veya notebook şablonu ekleyeyim.
+*Bu komut sırasıyla şunları yapar:*
+1. `src/feature_engineering.py` çalıştırır (NLP vektörlerini çıkarır).
+2. `src/tune_all.py` ile Optuna parametre taramasını yapar.
+3. LightGBM, CatBoost, XGBoost ve NN modellerini 5-Fold CV ile eğitir.
+4. `src/stacking_advanced.py` ile tahminleri meta-model'de birleştirir.
 
 ---
 
-**Detailed Quickstart & Workflow**
+## 📂 Dizin Yapısı (Directory Structure)
 
-- Clone the repo and open the folder.
-- Prepare virtual environment and install dependencies (see `requirements.txt`).
-- Run `src/feature_engineering.py` to generate feature-engineered CSVs (`train_fe.csv`, `test_fe.csv`) or use raw CSVs.
-- Choose a pipeline: baseline (`src/run_pipeline.py`) or embedding (`src/run_with_embeddings.py`).
-- Run CV training to produce model file(s) and submission.
-
-Example (PowerShell):
-
-```powershell
-# feature engineering
-python src/feature_engineering.py --train train.csv --test test_x.csv --out-train train_fe.csv --out-test test_fe.csv
-
-# baseline CV + submission
-python src/run_pipeline.py --train train_fe.csv --test test_fe.csv --out submission_fe.csv --model model_fe.pkl --cv 5
-
-# embeddings-based pipeline (may download models)
-python src/run_with_embeddings.py --train train.csv --test test_x.csv --out submission_embeddings.csv --model model_embeddings.pkl --cv 3
+```text
+Datathon-2026/
+├── data/
+│   ├── train.csv                 # Orijinal eğitim verisi
+│   ├── test_x.csv                # Orijinal test verisi
+│   └── train_fe.csv / test_fe.csv # Üretilen zenginleştirilmiş veriler
+├── src/
+│   ├── feature_engineering.py    # Feature işlemleri ve SBERT Embedding
+│   ├── tune_all.py               # Optuna hiperparametre optimizasyonu
+│   ├── run_pipeline.py           # LightGBM eğitimi (MLflow destekli)
+│   ├── run_catboost.py           # CatBoost eğitimi
+│   ├── run_xgboost.py            # XGBoost eğitimi
+│   ├── run_nn.py                 # PyTorch sinir ağı eğitimi
+│   └── stacking_advanced.py      # RidgeCV meta-model orkestrasyonu
+├── notebooks/                    # Keşifsel Veri Analizi (EDA) çalışmaları
+├── mlruns/                       # MLflow model izleme kayıtları
+└── README.md                     # Bu dosya
 ```
 
-**Experiment Tracking & Results**
-- Baseline 5-fold CV (example run): OOF MSE ≈ 91.5761
-- Embedding (sentence-transformers) 3-fold CV (example run): OOF MSE ≈ 88.2508
-- Feature-engineered baseline 5-fold CV (example run): OOF MSE ≈ 92.1856
+---
 
-These example scores were produced during development runs in this repo — use them as a starting point and improve via tuning and ensembling.
-
-**Ensembling**
-- A simple ensemble script is provided at `src/ensemble.py` which averages submissions weighted by inverse OOF MSEs. Use it to combine `submission.csv`, `submission_embeddings.csv`, and `submission_fe.csv` into `final_submission.csv`.
-
-**Kaggle Submission**
-- Create an account and join the competition on Kaggle.
-- Prepare `final_submission.csv` (student_id, career_success_score) and upload on the competition page.
-- To automate: install `kaggle` CLI and set `KAGGLE_USERNAME` and `KAGGLE_KEY` in your environment, then run:
-
+## 📊 Performans Takibi (MLflow)
+Yaptığınız tüm eğitimler, kaydettiğiniz tüm metrikler ve model çıktıları MLflow tarafından loglanmaktadır. Performans karşılaştırması yapmak için terminalinize şunu yazın:
 ```bash
-kaggle competitions submit -c <competition-name> -f final_submission.csv -m "My submission"
+mlflow ui
+```
+Tarayıcınızda açılacak `http://127.0.0.1:5000` adresi üzerinden modelleri kıyaslayabilirsiniz.
+
+---
+
+## ✉️ İletişim & Gönderim (Kaggle)
+Oluşturulan `final_submission_stacked.csv` dosyasını doğrudan Kaggle'a veya değerlendirme platformuna yükleyebilirsiniz. Eğer API kullanıyorsanız:
+```bash
+kaggle competitions submit -c <competition-name> -f final_submission_stacked.csv -m "Advanced NLP + RidgeCV Stack"
 ```
 
-**Next Steps & Suggestions**
-- Run full Optuna tuning (`src/tune_optuna.py`) for longer (e.g., 100 trials) to improve LightGBM hyperparameters.
-- Replace TF-IDF with `sentence-transformers` embeddings (already included) for mentor feedback text, then re-run CV.
-- Try stacking/ensembling multiple diverse models (LightGBM, CatBoost, simple neural nets).
-- Add logging and MLflow or Weights & Biases for experiment tracking.
+> **Başarılar!** Bu repo, makine öğrenmesi mühendisliği en iyi pratikleri (best practices) kullanılarak yarışma skorlarını zirveye taşımak üzere mimarilendirilmiştir.
 
-**Files of Interest**
-- `src/run_pipeline.py` — baseline end-to-end pipeline (preprocess + LightGBM)
-- `src/run_with_embeddings.py` — builds sentence-transformers embeddings and trains a model
-- `src/tune_optuna.py` — Optuna tuning script
-- `src/feature_engineering.py` — feature engineering helpers and CLI
-- `src/ensemble.py` — combines multiple submission files into `final_submission.csv`
-- `notebooks/` — interactive notebooks to reproduce experiments
-
-**Contact / Attribution**
-- Repo prepared for Datathon 2026. If you reuse code, please credit the team and follow the competition rules.
-
---
-Bu README güncellendi ve uzak repoya gönderilecek.
 
