@@ -1,4 +1,6 @@
 <div align="center">
+  <img src="assets/banner.png" alt="Datathon 2026 Banner" width="100%" />
+
   <h1>🏆 Datathon 2026 - Career Success Score Predictor</h1>
   
   <p>
