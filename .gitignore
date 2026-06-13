@@ -34,3 +34,4 @@ Thumbs.db
 
 # Logs
 logs/
+catboost_info/

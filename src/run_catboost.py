@@ -56,7 +56,8 @@ def run_catboost_cv(train_path, test_path, out_submission, model_out, cv=5):
             'l2_leaf_reg': 3,
             'cat_features': cat_cols if cat_cols else None,
             'random_state': 42,
-            'verbose': 0
+            'verbose': 0,
+            'allow_writing_files': False
         }
         import os, json
         if os.path.exists('best_params.json'):
@@ -85,15 +86,24 @@ def run_catboost_cv(train_path, test_path, out_submission, model_out, cv=5):
     mlflow.log_metric("oof_mse", overall_mse)
     
     # final model
-    final_model = CatBoostRegressor(
-        iterations=1000,
-        learning_rate=0.05,
-        depth=8,
-        l2_leaf_reg=3,
-        cat_features=cat_cols if cat_cols else None,
-        random_state=42,
-        verbose=0
-    )
+    params = {
+        'iterations': 1000,
+        'learning_rate': 0.05,
+        'depth': 8,
+        'l2_leaf_reg': 3,
+        'cat_features': cat_cols if cat_cols else None,
+        'random_state': 42,
+        'verbose': 0,
+        'allow_writing_files': False
+    }
+    if os.path.exists('best_params.json'):
+        with open('best_params.json', 'r') as f:
+            bp = json.load(f)
+            if 'catboost' in bp:
+                for k, v in bp['catboost'].items():
+                    params[k] = v
+                    
+    final_model = CatBoostRegressor(**params)
     final_model.fit(X_train, y)
     
     os.makedirs(os.path.dirname(model_out) or '.', exist_ok=True)

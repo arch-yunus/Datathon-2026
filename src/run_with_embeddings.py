@@ -14,7 +14,10 @@ from sklearn.metrics import mean_squared_error
 from lightgbm import LGBMRegressor
 import joblib
 import os
-from src.embed_features import add_embeddings_to_df
+try:
+    from src.embed_features import add_embeddings_to_df
+except ModuleNotFoundError:
+    from embed_features import add_embeddings_to_df
 
 
 def build_pipeline(X):
@@ -44,9 +47,17 @@ def build_pipeline(X):
 
     preprocessor = ColumnTransformer(transformers=transformers, remainder='drop')
 
+    params = {'n_estimators': 1000, 'learning_rate': 0.05, 'random_state': 42, 'n_jobs': -1}
+    import os, json
+    if os.path.exists('best_params.json'):
+        with open('best_params.json', 'r') as f:
+            bp = json.load(f)
+            if 'lightgbm' in bp:
+                params.update(bp['lightgbm'])
+
     model = Pipeline(steps=[
         ('preproc', preprocessor),
-        ('lgbm', LGBMRegressor(n_estimators=1000, learning_rate=0.05, random_state=42))
+        ('lgbm', LGBMRegressor(**params))
     ])
     return model
 
